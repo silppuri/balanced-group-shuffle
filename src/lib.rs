@@ -1,26 +1,30 @@
 use std::hash::{Hash};
 use std::collections::HashMap;
 
-pub struct GroupShuffle<K: Hash + Eq, T> {
+pub struct GroupShuffle<K: Hash + Eq, T: Clone> {
     groups: HashMap<K, Vec<T>>,
-    num_items: usize
+    num_values: usize
 }
 
-impl<K: Hash + Eq, T> GroupShuffle<K, T> {
+impl<K: Hash + Eq, T: Clone> GroupShuffle<K, T> {
     pub fn new() -> GroupShuffle<K, T> {
-        GroupShuffle { groups: HashMap::new(), num_items: 0 }
+        GroupShuffle { groups: HashMap::new(), num_values: 0 }
     }
 
     pub fn len(&self) -> usize {
         self.groups.len()
     }
 
-    pub fn num_items(&self) -> usize {
-        self.num_items
+    pub fn values(&self) -> Vec<T> {
+        self.groups.iter().flat_map(|(_k, v)| v).cloned().collect()
+    }
+
+    pub fn values_count(&self) -> usize {
+        self.num_values
     }
 
     pub fn insert(&mut self, key: K, value: T) -> Option<Vec<T>> {   
-        self.num_items += 1;
+        self.num_values += 1;
         match self.groups.get_mut(&key) {
             Some(existing_items) => {
                 let mut new_items = vec![value];
@@ -33,25 +37,25 @@ impl<K: Hash + Eq, T> GroupShuffle<K, T> {
         }
     }
 
-    pub fn shuffle(&self) -> Vec<&T> {
+    pub fn shuffle(&self) -> Vec<T> {
         let positioned_item_groups = self.build_positioned_items();
         let mut result = Vec::new();
-        for i in 0..self.num_items {
+        for i in 0..self.num_values {
             for group in positioned_item_groups.iter() {
-                if let Some(item) = group.get(&i) {
-                    result.push(item.clone());
+                if let Some(value) = group.get(&i) {
+                    result.push(value.clone());
                 }
             }
         }
         result
     }
 
-    fn build_positioned_items(&self) -> Vec<HashMap<usize, &T>> {
-        self.groups.iter().enumerate().map(|(i, (_key, items))| {
-            let spread = self.num_items / items.len();
+    fn build_positioned_items(&self) -> Vec<HashMap<usize, T>> {
+        self.groups.iter().enumerate().map(|(i, (_key, values))| {
+            let spread = self.num_values / values.len();
             let mut positions = HashMap::new();
-            for (j, item) in items.iter().enumerate() {
-                positions.insert((i + j * spread) % self.num_items, item.clone());
+            for (j, item) in values.iter().enumerate() {
+                positions.insert((i + j * spread) % self.num_values, item.clone());
             }
             positions.clone()
         }).collect()
@@ -75,10 +79,7 @@ fn test_adder() {
     shuffle.insert("d", "j");
     shuffle.insert("d", "k");
     shuffle.insert("d", "l");
-    println!("Length {}", shuffle.len());
-    println!("Num items {}", shuffle.num_items());
     assert!(shuffle.len() == 4);
-    assert!(shuffle.num_items() == 12);
+    assert!(shuffle.values().len() == 12);
     assert!(shuffle.shuffle().len() == 12);
-    println!("Num items {:?}", shuffle.shuffle());
 }
