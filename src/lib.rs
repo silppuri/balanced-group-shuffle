@@ -55,31 +55,35 @@ impl<K: Hash + Eq, T: Clone> GroupShuffle<K, T> {
             let spread = self.num_values / values.len();
             let mut positions = HashMap::new();
             for (j, item) in values.iter().enumerate() {
-                positions.insert((i + j * spread) % self.num_values, item.clone());
+                positions.insert(self.position(i, j, spread), item.clone());
             }
             positions.clone()
         }).collect()
     }
 
+    fn position(&self, i: usize, j: usize, spread: usize) -> usize {
+        (i + j * spread) % self.num_values
+    }
 }
 
 #[cfg(test)]
 #[test]
 fn test_adder() {
     let mut shuffle = GroupShuffle::new();
-    shuffle.insert("a", "a");
-    shuffle.insert("a", "b");
-    shuffle.insert("b", "c");
-    shuffle.insert("b", "d");
-    shuffle.insert("b", "e");
-    shuffle.insert("c", "f");
-    shuffle.insert("c", "g");
-    shuffle.insert("c", "h");
-    shuffle.insert("c", "i");
-    shuffle.insert("d", "j");
-    shuffle.insert("d", "k");
-    shuffle.insert("d", "l");
+    shuffle.insert("a", "a1");
+    shuffle.insert("a", "a2");
+    shuffle.insert("b", "b1");
+    shuffle.insert("b", "b2");
+    shuffle.insert("b", "b3");
+    shuffle.insert("c", "c1");
+    shuffle.insert("c", "c2");
+    shuffle.insert("c", "c3");
+    shuffle.insert("c", "c4");
+    shuffle.insert("d", "d1");
+    shuffle.insert("d", "d2");
+    shuffle.insert("d", "d3");
     assert!(shuffle.len() == 4);
     assert!(shuffle.values().len() == 12);
     assert!(shuffle.shuffle().len() == 12);
+    println!("{:?}", shuffle.shuffle());
 }
