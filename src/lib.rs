@@ -19,10 +19,6 @@ impl<K: Hash + Eq + Ord, T: Clone> GroupShuffle<K, T> {
         self.groups.iter().flat_map(|(_k, v)| v).cloned().collect()
     }
 
-    pub fn values_count(&self) -> usize {
-        self.num_values
-    }
-
     pub fn insert(&mut self, key: K, value: T) -> Option<Vec<T>> {   
         self.num_values += 1;
         GroupShuffle::value_into_map_vector(&mut self.groups, key, value)
