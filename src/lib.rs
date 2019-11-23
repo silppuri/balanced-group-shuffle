@@ -1,44 +1,6 @@
 use std::hash::{Hash};
 use std::collections::HashMap;
 
-#[derive(Debug)]
-pub struct Shuffle {
-    num_groups: usize,
-    num_items: usize,
-    result: Vec<String>
-}
-
-impl Shuffle {
-    fn build_positioned_items(groups: Vec<Vec<String>>, num_items: usize) -> Vec<HashMap<usize, String>> {
-        groups.iter().enumerate().map(|(i, group)| {
-            let spread = num_items / group.len();
-            let mut positions = HashMap::new();
-            for (j, item) in group.iter().enumerate() {
-                positions.insert((i + j * spread) % num_items, item.clone());
-            }
-            positions.clone()
-        }).collect()
-    }
-
-    pub fn new(groups: Vec<Vec<String>>) -> Shuffle {
-        let num_items = groups.iter().fold(0, |acc, group| acc + group.len());
-        let num_groups = groups.len();
-        let positioned_item_groups = Shuffle::build_positioned_items(groups, num_items);
-        let mut result = Vec::new();
-        for i in 0..num_items {
-            println!("{}", i);
-            for group in positioned_item_groups.iter() {
-                println!("{:?}", group);
-                if let Some(item) = group.get(&i) {
-                    result.push(item.clone());
-                }
-            }
-        }
-        println!("{:?}", result);
-        Shuffle { num_groups: num_groups, num_items: num_items, result: result }
-    }
-}
-
 pub struct GroupShuffle<K: Hash + Eq, T> {
     groups: HashMap<K, Vec<T>>,
     num_items: usize
@@ -47,6 +9,30 @@ pub struct GroupShuffle<K: Hash + Eq, T> {
 impl<K: Hash + Eq, T> GroupShuffle<K, T> {
     pub fn new() -> GroupShuffle<K, T> {
         GroupShuffle { groups: HashMap::new(), num_items: 0 }
+    }
+
+    fn build_positioned_items(&self) -> Vec<HashMap<usize, &T>> {
+        self.groups.iter().enumerate().map(|(i, (_key, items))| {
+            let spread = self.num_items / items.len();
+            let mut positions = HashMap::new();
+            for (j, item) in items.iter().enumerate() {
+                positions.insert((i + j * spread) % self.num_items, item.clone());
+            }
+            positions.clone()
+        }).collect()
+    }
+
+    pub fn shuffle(&self) -> Vec<&T> {
+        let positioned_item_groups = self.build_positioned_items();
+        let mut result = Vec::new();
+        for i in 0..self.num_items {
+            for group in positioned_item_groups.iter() {
+                if let Some(item) = group.get(&i) {
+                    result.push(item.clone());
+                }
+            }
+        }
+        result
     }
 
     pub fn insert(&mut self, key: K, value: T) -> Option<Vec<T>> {   
@@ -77,20 +63,22 @@ impl<K: Hash + Eq, T> GroupShuffle<K, T> {
 #[test]
 fn test_adder() {
     let mut shuffle = GroupShuffle::new();
-    shuffle.insert("a", "Sa");
-    shuffle.insert("a", "R");
-    shuffle.insert("b", "D");
-    shuffle.insert("b", "Ja");
-    shuffle.insert("b", "A");
-    shuffle.insert("c", "Juh");
-    shuffle.insert("c", "Jus");
-    shuffle.insert("c", "Ar");
-    shuffle.insert("c", "P");
-    shuffle.insert("d", "N");
-    shuffle.insert("d", "T");
-    shuffle.insert("d", "Se");
+    shuffle.insert("a", "a");
+    shuffle.insert("a", "b");
+    shuffle.insert("b", "c");
+    shuffle.insert("b", "d");
+    shuffle.insert("b", "e");
+    shuffle.insert("c", "f");
+    shuffle.insert("c", "g");
+    shuffle.insert("c", "h");
+    shuffle.insert("c", "i");
+    shuffle.insert("d", "j");
+    shuffle.insert("d", "k");
+    shuffle.insert("d", "l");
     println!("Length {}", shuffle.len());
     println!("Num items {}", shuffle.num_items());
     assert!(shuffle.len() == 4);
     assert!(shuffle.num_items() == 12);
+    assert!(shuffle.shuffle().len() == 12);
+    println!("Num items {:?}", shuffle.shuffle());
 }
