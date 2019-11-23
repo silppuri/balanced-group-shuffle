@@ -1,3 +1,4 @@
+use rand::{thread_rng, Rng};
 use std::hash::Hash;
 use std::collections::BTreeMap;
 
@@ -42,8 +43,14 @@ impl<K: Hash + Eq + Ord, T: Clone> GroupShuffle<K, T> {
     }
 
     fn position(&self, j: usize, spread: usize) -> usize {
-        // TODO: Add little bit of randomnes!
-        (j * spread) % self.num_values
+        let mut rng = thread_rng();
+        if j == 0 {
+            rng.gen_range(0, self.len())
+        } else {
+            let lower = spread as f64 * j as f64 - self.num_values as f64 * 0.05;
+            let upper = spread as f64 * j as f64 + self.num_values as f64 * 0.05;
+            rng.gen_range(lower, upper) as usize
+        }
     }
 
     fn value_into_map_vector(map: &mut BTreeMap<K, Vec<T>>, key: K, value: T) -> Option<Vec<T>> {
