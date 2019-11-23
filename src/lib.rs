@@ -46,6 +46,7 @@ impl<K: Hash + Eq + Ord, T: Clone> GroupShuffle<K, T> {
     }
 
     fn position(&self, j: usize, spread: usize) -> usize {
+        // TODO: Add little bit of randomnes!
         (j * spread) % self.num_values
     }
 
