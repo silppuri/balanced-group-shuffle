@@ -1,14 +1,14 @@
-use std::hash::{Hash};
-use std::collections::HashMap;
+use std::hash::Hash;
+use std::collections::{HashMap, BTreeMap};
 
-pub struct GroupShuffle<K: Hash + Eq, T: Clone> {
-    groups: HashMap<K, Vec<T>>,
+pub struct GroupShuffle<K: Hash + Eq + Ord, T: Clone> {
+    groups: BTreeMap<K, Vec<T>>,
     num_values: usize
 }
 
-impl<K: Hash + Eq, T: Clone> GroupShuffle<K, T> {
+impl<K: Hash + Eq + Ord, T: Clone> GroupShuffle<K, T> {
     pub fn new() -> GroupShuffle<K, T> {
-        GroupShuffle { groups: HashMap::new(), num_values: 0 }
+        GroupShuffle { groups: BTreeMap::new(), num_values: 0 }
     }
 
     pub fn len(&self) -> usize {
