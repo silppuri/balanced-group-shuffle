@@ -1,5 +1,5 @@
 use std::hash::Hash;
-use std::collections::{HashMap, BTreeMap};
+use std::collections::BTreeMap;
 
 pub struct GroupShuffle<K: Hash + Eq + Ord, T: Clone> {
     groups: BTreeMap<K, Vec<T>>,
@@ -25,44 +25,42 @@ impl<K: Hash + Eq + Ord, T: Clone> GroupShuffle<K, T> {
 
     pub fn insert(&mut self, key: K, value: T) -> Option<Vec<T>> {   
         self.num_values += 1;
-        match self.groups.get_mut(&key) {
-            Some(existing_items) => {
-                let mut new_items = vec![value];
-                new_items.append(existing_items);
-                self.groups.insert(key, new_items)
+        GroupShuffle::value_into_map_vector(&mut self.groups, key, value)
+    }
+
+    pub fn shuffle(&self) -> Vec<&T> {
+        let positioned_item_groups = self.disperse_values();
+        positioned_item_groups.iter().flat_map(|(_position, values)| values).cloned().collect()
+    }
+
+    fn disperse_values(&self) -> BTreeMap<usize, Vec<&T>> {
+        let mut map = BTreeMap::new();
+        for (_i, (_key, values)) in self.groups.iter().enumerate() {
+            let spread = self.num_values / values.len();
+            for (j, value) in values.iter().enumerate() {
+                let position = self.position(j, spread);
+                GroupShuffle::value_into_map_vector(&mut map, position, value);
+            }
+        }
+        map
+    }
+
+    fn position(&self, j: usize, spread: usize) -> usize {
+        (j * spread) % self.num_values
+    }
+
+    fn value_into_map_vector(map: &mut BTreeMap<K, Vec<T>>, key: K, value: T) -> Option<Vec<T>> {
+        match map.get_mut(&key) {
+            Some(values) => {
+                let mut new_values = vec![];
+                new_values.append(values);
+                new_values.append(&mut vec![value]);
+                map.insert(key, new_values)
             }
             None => {
-                self.groups.insert(key, vec![value])
+                map.insert(key, vec![value])
             }
         }
-    }
-
-    pub fn shuffle(&self) -> Vec<T> {
-        let positioned_item_groups = self.build_positioned_items();
-        let mut result = Vec::new();
-        for i in 0..self.num_values {
-            for group in positioned_item_groups.iter() {
-                if let Some(value) = group.get(&i) {
-                    result.push(value.clone());
-                }
-            }
-        }
-        result
-    }
-
-    fn build_positioned_items(&self) -> Vec<HashMap<usize, T>> {
-        self.groups.iter().enumerate().map(|(i, (_key, values))| {
-            let spread = self.num_values / values.len();
-            let mut positions = HashMap::new();
-            for (j, item) in values.iter().enumerate() {
-                positions.insert(self.position(i, j, spread), item.clone());
-            }
-            positions.clone()
-        }).collect()
-    }
-
-    fn position(&self, i: usize, j: usize, spread: usize) -> usize {
-        (i + j * spread) % self.num_values
     }
 }
 
