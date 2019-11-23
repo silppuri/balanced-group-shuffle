@@ -11,15 +11,26 @@ impl<K: Hash + Eq, T> GroupShuffle<K, T> {
         GroupShuffle { groups: HashMap::new(), num_items: 0 }
     }
 
-    fn build_positioned_items(&self) -> Vec<HashMap<usize, &T>> {
-        self.groups.iter().enumerate().map(|(i, (_key, items))| {
-            let spread = self.num_items / items.len();
-            let mut positions = HashMap::new();
-            for (j, item) in items.iter().enumerate() {
-                positions.insert((i + j * spread) % self.num_items, item.clone());
+    pub fn len(&self) -> usize {
+        self.groups.len()
+    }
+
+    pub fn num_items(&self) -> usize {
+        self.num_items
+    }
+
+    pub fn insert(&mut self, key: K, value: T) -> Option<Vec<T>> {   
+        self.num_items += 1;
+        match self.groups.get_mut(&key) {
+            Some(existing_items) => {
+                let mut new_items = vec![value];
+                new_items.append(existing_items);
+                self.groups.insert(key, new_items)
             }
-            positions.clone()
-        }).collect()
+            None => {
+                self.groups.insert(key, vec![value])
+            }
+        }
     }
 
     pub fn shuffle(&self) -> Vec<&T> {
@@ -35,28 +46,17 @@ impl<K: Hash + Eq, T> GroupShuffle<K, T> {
         result
     }
 
-    pub fn insert(&mut self, key: K, value: T) -> Option<Vec<T>> {   
-        self.num_items += 1;
-        println!("{}", self.num_items);
-        match self.groups.get_mut(&key) {
-            Some(existing_items) => {
-                let mut new_items = vec![value];
-                new_items.append(existing_items);
-                self.groups.insert(key, new_items)
+    fn build_positioned_items(&self) -> Vec<HashMap<usize, &T>> {
+        self.groups.iter().enumerate().map(|(i, (_key, items))| {
+            let spread = self.num_items / items.len();
+            let mut positions = HashMap::new();
+            for (j, item) in items.iter().enumerate() {
+                positions.insert((i + j * spread) % self.num_items, item.clone());
             }
-            None => {
-                self.groups.insert(key, vec![value])
-            }
-        }
+            positions.clone()
+        }).collect()
     }
 
-    pub fn len(&self) -> usize {
-        self.groups.len()
-    }
-
-    pub fn num_items(&self) -> usize {
-        self.num_items
-    }
 }
 
 #[cfg(test)]
